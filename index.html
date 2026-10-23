@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>O my Dearest One</title>
+<style>
+  :root {
+    --bg: #07070d;
+    --paper: #f3ead7;
+    --ink: #e9e4d6;
+    --accent: #f2c14e;
+    --ratio: 704 / 641;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: radial-gradient(ellipse at 50% 30%, #14142a 0%, var(--bg) 70%);
+    color: var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; padding: 16px; overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .stage { perspective: 2200px; width: min(92vw, calc((100vh - 120px) * 704 / 641), 880px); }
+  .book { position: relative; width: 100%; aspect-ratio: var(--ratio); transform-style: preserve-3d; }
+
+  /* back cover sits underneath everything */
+  .backcover {
+    position: absolute; inset: 0; border-radius: 4px 10px 10px 4px;
+    background: linear-gradient(135deg, #1b1b3a, #0b0b18);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 8%;
+    box-shadow: 0 20px 50px rgba(0,0,0,.6);
+  }
+  .backcover h2 { font-weight: normal; letter-spacing: .25em; color: var(--accent); margin: 0 0 .6em; font-size: clamp(18px, 4vw, 30px); }
+  .backcover p { margin: 0; opacity: .8; font-size: clamp(13px, 2.4vw, 18px); line-height: 1.7; }
+  .backcover button { margin-top: 1.6em; }
+
+  .leaf {
+    position: absolute; inset: 0;
+    transform-origin: left center; transform-style: preserve-3d;
+    transition: transform 1.1s cubic-bezier(.45,.05,.25,1), opacity .5s ease .45s;
+    cursor: pointer;
+  }
+  .leaf.flipped { transform: rotateY(-180deg); opacity: 0; pointer-events: none; }
+  .leaf.unflipping { opacity: 1; transition: transform 1.1s cubic-bezier(.45,.05,.25,1), opacity .2s ease; }
+  .face {
+    position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    border-radius: 4px 10px 10px 4px; overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,.55);
+  }
+  .face img { width: 100%; height: 100%; display: block; object-fit: cover; user-select: none; -webkit-user-drag: none; }
+  .face.back {
+    transform: rotateY(180deg);
+    background: linear-gradient(90deg, #d9cfb6, var(--paper) 30%);
+  }
+  /* spine shading */
+  .face.front::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,0) 6%);
+  }
+
+  .cover {
+    background:
+      radial-gradient(circle at 20% 25%, rgba(242,193,78,.25) 0 2px, transparent 3px),
+      radial-gradient(circle at 75% 18%, rgba(242,193,78,.2) 0 2px, transparent 3px),
+      radial-gradient(circle at 60% 70%, rgba(255,255,255,.18) 0 1.5px, transparent 3px),
+      radial-gradient(circle at 30% 80%, rgba(255,255,255,.15) 0 1.5px, transparent 3px),
+      linear-gradient(145deg, #23234d, #0b0b1c 70%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    border: 1px solid rgba(242,193,78,.35);
+  }
+  .cover h1 { margin: 0; font-weight: normal; color: var(--accent); font-size: clamp(26px, 7vw, 56px); letter-spacing: .06em; }
+  .cover p { margin: .9em 0 0; opacity: .75; font-size: clamp(12px, 2.4vw, 17px); letter-spacing: .2em; text-transform: uppercase; }
+
+  .back .mark { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(90,70,30,.35); font-size: clamp(30px, 8vw, 70px); }
+
+  .controls { display: flex; align-items: center; gap: 16px; }
+  button {
+    background: transparent; color: var(--ink); border: 1px solid rgba(233,228,214,.4);
+    padding: 10px 20px; border-radius: 999px; font: inherit; font-size: 15px; cursor: pointer;
+    transition: background .2s, border-color .2s;
+  }
+  button:hover:not(:disabled) { background: rgba(242,193,78,.14); border-color: var(--accent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  button:disabled { opacity: .3; cursor: default; }
+  .counter { min-width: 7em; text-align: center; opacity: .75; font-size: 14px; letter-spacing: .1em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .leaf, .leaf.unflipping { transition: opacity .3s; }
+  }
+</style>
+</head>
+<body>
+
+<main class="stage" aria-label="Picture book">
+  <div class="book" id="book">
+    <div class="backcover" id="backcover">
+      <h2>THE END</h2>
+      <p>O my Dearest One,<br>I choose you every single day.</p>
+      <button id="restart" type="button">Read again</button>
+    </div>
+
+    <!-- leaves are listed top-of-stack first (cover) -->
+    <section class="leaf" data-title="Cover">
+      <div class="face front cover">
+        <h1>O my Dearest One</h1>
+        <p>Tap to open</p>
+      </div>
+      <div class="face back"><div class="mark">✦</div></div>
+    </section>
+
+    <section class="leaf" data-title="Page 1">
+      <div class="face front"><img src="images/page1.png" alt="A tiny blue and green Earth floating in space beside a huge blazing sun. Red text: O my Dearest One, look how far you have come. My Ray of Sunshine, The Light of my Life."></div>
+      <div class="face back"><div class="mark">✦</div></div>
+    </section>
+
+    <section class="leaf" data-title="Page 2">
+      <div class="face front"><img src="images/page2.png" alt="A black night sky full of hand-drawn yellow and blue stars over a glowing blue and green horizon. Blue text: O my Dearest One, you shine like the stars in the sky, glimmering in my eyes."></div>
+      <div class="face back"><div class="mark">✦</div></div>
+    </section>
+
+    <section class="leaf" data-title="Page 3">
+      <div class="face front"><img src="images/page3.png" alt="A pale purple spiral galaxy with a glowing teal centre in deep space. White text: O my Dearest One, a ray of Cosmic Light, binding my soul to those planets of yours. To leave a black hole in my world would be the demise of mine."></div>
+      <div class="face back"><div class="mark">✦</div></div>
+    </section>
+
+    <section class="leaf" data-title="Page 4">
+      <div class="face front"><img src="images/page4.png" alt="A hand-painted sunflower growing from bright green grass. Yellow text: O my Dearest One, forgive me. O my Dearest One, I choose you every single day. O my Dearest One, Happy Birthday."></div>
+      <div class="face back"><div class="mark">✦</div></div>
+    </section>
+  </div>
+</main>
+
+<nav class="controls" aria-label="Page controls">
+  <button id="prev" type="button" aria-label="Previous page">← Back</button>
+  <span class="counter" id="counter" aria-live="polite">Cover</span>
+  <button id="next" type="button" aria-label="Next page">Next →</button>
+</nav>
+
+<script>
+(function () {
+  var leaves = Array.prototype.slice.call(document.querySelectorAll('.leaf'));
+  var total = leaves.length;           // 5 leaves: cover + 4 pages
+  var current = 0;                     // number of leaves already turned
+  var prev = document.getElementById('prev');
+  var next = document.getElementById('next');
+  var counter = document.getElementById('counter');
+  var book = document.getElementById('book');
+
+  function render() {
+    leaves.forEach(function (leaf, i) {
+      var flipped = i < current;
+      // turned leaves stack in order; unturned leaves keep cover on top
+      leaf.style.zIndex = flipped ? (i + 1) : (total - i + total);
+      leaf.classList.toggle('flipped', flipped);
+      leaf.setAttribute('aria-hidden', flipped ? 'true' : 'false');
+    });
+    prev.disabled = current === 0;
+    next.disabled = current === total;
+    if (current === 0) counter.textContent = 'Cover';
+    else if (current < total) counter.textContent = 'Page ' + current + ' of ' + (total - 1);
+    else counter.textContent = 'The End';
+  }
+
+  function goNext() {
+    if (current >= total) return;
+    current++; render();
+  }
+  function goPrev() {
+    if (current <= 0) return;
+    var leaf = leaves[current - 1];
+    leaf.classList.add('unflipping');
+    setTimeout(function () { leaf.classList.remove('unflipping'); }, 1200);
+    current--; render();
+  }
+
+  next.addEventListener('click', goNext);
+  prev.addEventListener('click', goPrev);
+  document.getElementById('restart').addEventListener('click', function () {
+    current = 0; render();
+  });
+
+  // click the left 25% of a page to go back, anywhere else to go forward
+  leaves.forEach(function (leaf) {
+    leaf.addEventListener('click', function (e) {
+      var r = leaf.getBoundingClientRect();
+      if (e.clientX - r.left < r.width * 0.25 && current > 0) goPrev(); else goNext();
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); goNext(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); goPrev(); }
+    else if (e.key === 'Home') { current = 0; render(); }
+    else if (e.key === 'End') { current = total; render(); }
+  });
+
+  // swipe on touch screens
+  var startX = null;
+  book.addEventListener('touchstart', function (e) { startX = e.touches[0].clientX; }, { passive: true });
+  book.addEventListener('touchend', function (e) {
+    if (startX === null) return;
+    var dx = e.changedTouches[0].clientX - startX;
+    startX = null;
+    if (Math.abs(dx) > 40) { dx < 0 ? goNext() : goPrev(); }
+  }, { passive: true });
+
+  render();
+})();
+</script>
+</body>
+</html>
